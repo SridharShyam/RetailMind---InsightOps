@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product_name }} - RetailMind</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔍 {{ product_name }}</h1>
+            <p class="subtitle">Detailed AI Analysis</p>
+        </header>
+
+        <nav class="breadcrumb">
+            <a href="/">Home</a> > <a href="/dashboard">Dashboard</a> > {{ product_name }}
+        </nav>
+
+        <main class="main-content">
+            {% if analysis %}
+            <div class="product-overview">
+                <div class="product-metrics">
+                    <div class="metric-card">
+                        <h3>Current Inventory</h3>
+                        <p class="metric-value">{{ analysis.metrics.current_inventory }} units</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Daily Sales (Avg)</h3>
+                        <p class="metric-value">{{ analysis.metrics.current_sales }} units</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Current Price</h3>
+                        <p class="metric-value">${{ analysis.metrics.current_price }}</p>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Last Updated</h3>
+                        <p class="metric-value">{{ analysis.metrics.last_date }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-sections">
+                <section class="analysis-section">
+                    <h2>📈 Demand Forecast</h2>
+                    <div class="forecast-details">
+                        <div class="forecast-metric">
+                            <span class="metric-label">Trend:</span>
+                            <span
+                                class="metric-value {% if analysis.forecast.demand_trend_pct > 0 %}positive{% else %}negative{% endif %}">
+                                {{ analysis.forecast.demand_trend_pct }}%
+                            </span>
+                        </div>
+                        <div class="forecast-metric">
+                            <span class="metric-label">Next 7 Days:</span>
+                            <span class="metric-value">{{ analysis.forecast.forecast_next_7_days|join(', ') }}</span>
+                        </div>
+                        <div class="forecast-metric">
+                            <span class="metric-label">Confidence:</span>
+                            <span class="metric-value confidence-{{ analysis.forecast.confidence_tier|lower }}">
+                                {{ analysis.forecast.confidence_tier }} ({{ analysis.forecast.confidence_score }})
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="analysis-section">
+                    <h2>⚠️ Inventory Risk</h2>
+                    <div class="risk-details">
+                        <div class="risk-level {{ analysis.inventory_risk.risk_level|lower }}">
+                            {{ analysis.inventory_risk.risk_level }}
+                        </div>
+                        <p class="risk-reason">{{ analysis.inventory_risk.reason }}</p>
+                        <div class="risk-metrics">
+                            <div class="risk-metric">
+                                <span class="metric-label">Days of Stock:</span>
+                                <span class="metric-value">{{ analysis.inventory_risk.days_of_stock }} days</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="analysis-section">
+                    <h2>💰 Pricing Intelligence</h2>
+                    <div class="pricing-details">
+                        <div class="pricing-action {{ analysis.pricing.action|lower }}">
+                            {{ analysis.pricing.action }}
+                        </div>
+                        <p class="pricing-reason">{{ analysis.pricing.reason }}</p>
+                        <div class="pricing-metrics">
+                            <div class="pricing-metric">
+                                <span class="metric-label">Current Price:</span>
+                                <span class="metric-value">${{ analysis.pricing.current_price }}</span>
+                            </div>
+                            <div class="pricing-metric">
+                                <span class="metric-label">Suggested Price:</span>
+                                <span class="metric-value">${{ analysis.pricing.suggested_price }}</span>
+                            </div>
+                            <div class="pricing-metric">
+                                <span class="metric-label">Change:</span>
+                                <span
+                                    class="metric-value {% if analysis.pricing.suggested_change_pct > 0 %}positive{% else %}negative{% endif %}">
+                                    {{ analysis.pricing.suggested_change_pct }}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="analysis-row">
+                    <section class="analysis-section half-width">
+                        <h2>📅 Seasonality & Trends</h2>
+                        <div class="seasonality-details">
+                            <p><strong>Pattern:</strong> {{ analysis.seasonality.pattern }}</p>
+                            <p><strong>Best Day:</strong> {{ analysis.seasonality.best_sales_day }}</p>
+                            {% if analysis.seasonality.weekend_lift_pct > 0 %}
+                            <p class="highlight-text">Sales increase by {{ analysis.seasonality.weekend_lift_pct }}% on
+                                weekends.</p>
+                            {% endif %}
+                        </div>
+                    </section>
+
+                    <section class="analysis-section half-width">
+                        <h2>🏢 Market Position</h2>
+                        <div class="competition-details">
+                            <p><strong>Position:</strong> <span class="badge">{{ analysis.competition.market_position
+                                    }}</span></p>
+                            <p><strong>Market Price:</strong> ${{ analysis.competition.avg_market_price }}</p>
+                            <p><strong>Difference:</strong> {{ analysis.competition.price_difference_pct }}%</p>
+                        </div>
+                    </section>
+                </div>
+
+                <section class="analysis-section">
+                    <h2>🔗 Smart Synergies</h2>
+                    <div class="synergy-details">
+                        {% if analysis.synergy.related_products %}
+                        <p>Customers who buy this also buy:</p>
+                        <div class="pill-container">
+                            {% for item in analysis.synergy.related_products %}
+                            <a href="/product/{{ item }}" class="product-pill">{{ item }}</a>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p>No strong product correlations found.</p>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="analysis-section simulator-section">
+                    <h2>🧪 What-If Simulator</h2>
+                    <p>Test changes to see AI predictions instantly.</p>
+
+                    <!-- Tabs -->
+                    <div class="sim-tabs">
+                        <button class="sim-tab active" onclick="switchSimTab('price')">Price Change</button>
+                        <button class="sim-tab" onclick="switchSimTab('promo')">Run Promotion</button>
+                        <button class="sim-tab" onclick="switchSimTab('stock')">Inventory</button>
+                        <button class="sim-tab" onclick="switchSimTab('competitor')">Competitor</button>
+                        <button class="sim-tab" onclick="switchSimTab('marketing')">Ads</button>
+                    </div>
+
+                    <div class="simulator-controls" id="sim-panel-price">
+                        <div class="sim-group">
+                            <label>Adjust Price ($)</label>
+                            <div class="input-row">
+                                <input type="number" id="sim-price" step="0.10"
+                                    value="{{ analysis.metrics.current_price }}">
+                                <button onclick="runSimulation('price_change')" class="btn-sim">Simulate Price</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="simulator-controls hidden" id="sim-panel-promo">
+                        <div class="sim-group">
+                            <label>Discount (%)</label>
+                            <div class="input-row">
+                                <input type="number" id="sim-discount" step="1" value="10" min="1" max="90">
+                            </div>
+                        </div>
+                        <div class="sim-group">
+                            <label>Duration (Days)</label>
+                            <div class="input-row">
+                                <input type="number" id="sim-duration" step="1" value="7" min="1">
+                                <button onclick="runSimulation('promotion')" class="btn-sim">Simulate Promo</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="simulator-controls hidden" id="sim-panel-stock">
+                        <div class="sim-group">
+                            <label>New Stock Level (Units)</label>
+                            <div class="input-row">
+                                <input type="number" id="sim-stock" step="1"
+                                    value="{{ analysis.metrics.current_inventory }}">
+                                <button onclick="runSimulation('inventory_change')" class="btn-sim">Simulate
+                                    Stock</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="simulator-controls hidden" id="sim-panel-competitor">
+                        <div class="sim-group">
+                            <label>Competitor Price Drop (%)</label>
+                            <div class="input-row">
+                                <input type="number" id="sim-comp-drop" step="1" value="10">
+                                <button onclick="runSimulation('competitor_move')" class="btn-sim">Simulate
+                                    Threat</button>
+                            </div>
+                            <small>Simulation assumes you KEEP your current price.</small>
+                        </div>
+                    </div>
+
+                    <div class="simulator-controls hidden" id="sim-panel-marketing">
+                        <div class="sim-group">
+                            <label>Ad Spend ($)</label>
+                            <div class="input-row">
+                                <input type="number" id="sim-ad-spend" step="50" value="200">
+                            </div>
+                        </div>
+                        <div class="sim-group">
+                            <label>Expected Lift (%)</label>
+                            <div class="input-row">
+                                <input type="number" id="sim-ad-lift" step="5" value="15">
+                                <button onclick="runSimulation('marketing')" class="btn-sim">Calc ROI</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="simulation-result" class="simulation-result hidden">
+                        <h4>Simulation Result</h4>
+                        <div class="sim-metrics">
+                            <div>
+                                <span>Impact:</span>
+                                <span id="sim-revenue-change" class="sim-value">--</span>
+                            </div>
+                            <div>
+                                <span>Demand:</span>
+                                <span id="sim-demand-change" class="sim-value">--</span>
+                            </div>
+                        </div>
+                        <!-- Extra metrics for inventory/promo -->
+                        <div id="sim-extra-metrics" class="sim-metrics hidden">
+                            <!-- populated by JS -->
+                        </div>
+                        <p id="sim-recommendation" class="sim-rec"></p>
+                    </div>
+                </section>
+
+                <section class="analysis-section highlight">
+                    <h2>🤖 AI Recommendation</h2>
+                    <div class="recommendation-card">
+                        <div class="recommendation-header">
+                            <div class="confidence-badge confidence-{{ analysis.recommendation.confidence|lower }}">
+                                {{ analysis.recommendation.confidence }} CONFIDENCE
+                            </div>
+                            <div class="action-badge">
+                                {{ analysis.recommendation.inventory_action }}
+                            </div>
+                        </div>
+                        <p class="recommendation-summary">{{ analysis.recommendation.summary }}</p>
+                        <p class="recommendation-reason">{{ analysis.recommendation.action_reason }}</p>
+                        <p class="recommendation-guidance">{{ analysis.recommendation.pricing_guidance }}</p>
+                    </div>
+                </section>
+            </div>
+
+            <div class="back-link">
+                <a href="/dashboard" class="btn-back">← Back to Dashboard</a>
+            </div>
+
+            {% else %}
+            <div class="error-message">
+                <h2>Product not found</h2>
+                <p>Could not load analysis for "{{ product_name }}"</p>
+                <a href="/dashboard" class="btn-back">Return to Dashboard</a>
+            </div>
+            {% endif %}
+        </main>
+
+        <footer class="footer">
+            <nav class="nav">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/insights">Insights</a>
+                <a href="/about">About</a>
+            </nav>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RetailMind - AI Retail Assistant</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🛒 RetailMind</h1>
+            <p class="subtitle">AI-Powered Retail Decision Assistant</p>
+        </header>
+
+        <main class="main-content">
+            <div class="hero">
+                <h2>Make Smarter Retail Decisions</h2>
+                <p>RetailMind helps small retailers optimize inventory, pricing, and product selection using simple,
+                    explainable AI.</p>
+            </div>
+
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>Demand Forecasting</h3>
+                    <p>Predict next week's sales using smart rolling averages</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">⚠️</div>
+                    <h3>Risk Detection</h3>
+                    <p>Identify overstock and opportunity products</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💰</div>
+                    <h3>Pricing Intelligence</h3>
+                    <p>Get clear pricing recommendations</p>
+                </div>
+
+                <div class="feature-card highlight-card">
+                    <div class="feature-icon">🧪</div>
+                    <h3>What-If Simulator</h3>
+                    <p>Test price changes and measure impact instantly</p>
+                </div>
+            </div>
+
+            <div class="cta-section">
+                <div class="upload-container"
+                    style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto;">
+                    <h3 style="margin-top: 0;">📂 Start Analysis</h3>
+                    <p style="margin-bottom: 1rem; color: #666;">Upload your sales data (CSV) to get instant insights.
+                    </p>
+
+                    <div style="display: flex; gap: 10px; flex-direction: column;">
+                        <input type="file" id="homeUploadFile" accept=".csv"
+                            style="padding: 10px; border: 2px dashed #ddd; border-radius: 6px;">
+                        <button onclick="homeUpload()" class="cta-button" id="btnUploadHome">Analyze My Store</button>
+                    </div>
+                    <div id="uploadStatus" style="margin-top: 10px; font-weight: bold;"></div>
+                    <div id="uploadWarnings"
+                        style="margin-top: 10px; font-size: 0.9em; color: #d35400; text-align: left;"></div>
+                </div>
+
+                <p style="margin-top: 20px;">
+                    <a href="/dashboard" style="color: #666; text-decoration: none;">Skip to Dashboard &rarr;</a>
+                </p>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <nav class="nav">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/insights">Insights</a>
+                <a href="/simulator">Simulator</a>
+                <a href="/about">About</a>
+            </nav>
+            <p class="footer-note">Built for 24-hour Hackathon | Simple & Explainable AI</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/home_upload.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+
+</html>

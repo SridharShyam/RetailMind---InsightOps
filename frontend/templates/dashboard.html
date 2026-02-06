@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - RetailMind</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>📊 Retail Dashboard</h1>
+            <p class="subtitle">Real-time AI analysis of all products</p>
+        </header>
+
+        <nav class="breadcrumb">
+            <a href="/">Home</a> > Dashboard
+        </nav>
+
+        <main class="main-content">
+            <div class="dashboard-header">
+                <h2>Product Analysis</h2>
+                <div class="controls">
+                    <input type="file" id="inventoryFile" style="display: none;" accept=".csv"
+                        onchange="uploadInventory()">
+                    <button onclick="document.getElementById('inventoryFile').click()" class="btn-refresh"
+                        style="background-color: #8e44ad;">📂 Upload Data</button>
+                    <button onclick="refreshAnalysis()" class="btn-refresh">🔄 Refresh</button>
+                    <a href="/insights" class="btn-insights">💡 View Insights</a>
+                </div>
+            </div>
+
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Total Products</h3>
+                    <p id="total-products" class="summary-value">-</p>
+                </div>
+                <div class="summary-card warning">
+                    <h3>High Risk</h3>
+                    <p id="high-risk-count" class="summary-value">-</p>
+                </div>
+                <div class="summary-card success">
+                    <h3>Opportunities</h3>
+                    <p id="opportunity-count" class="summary-value">-</p>
+                </div>
+            </div>
+            <div id="summaryHeadline" class="summary-headline"></div>
+
+            <div class="table-container">
+                <table id="products-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Market Position</th>
+                            <th>Demand Trend</th>
+                            <th>Inventory Status</th>
+                            <th>Alerts</th>
+                            <th>Pricing Action</th>
+                            <th>Confidence</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="products-body">
+                        <!-- Will be populated by JavaScript -->
+                        <tr>
+                            <td colspan="8" class="loading">Loading analysis data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <nav class="nav">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/insights">Insights</a>
+                <a href="/simulator">Simulator</a>
+                <a href="/about">About</a>
+            </nav>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/v1/products/');
+                const listData = await response.json();
+
+                // Adapter: Convert list to map for existing updateDashboard logic
+                const data = {};
+                listData.products.forEach(item => {
+                    data[item.product_name] = {
+                        inventory_risk: {
+                            risk_level: item.risk_level,
+                            expiry_risk: item.expiry_risk,
+                            reason: item.risk_reason
+                        },
+                        forecast: {
+                            demand_trend_pct: item.demand_trend_pct,
+                            confidence_tier: item.confidence_tier
+                        },
+                        pricing: { action: item.pricing_action },
+                        competition: { market_position: item.market_position }
+                    };
+                });
+
+                updateDashboard(data);
+
+                // Load insights for summary cards
+                const insightsResponse = await fetch('/api/v1/products/insights');
+                const insights = await insightsResponse.json();
+                updateSummaryCards(insights);
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                document.getElementById('products-body').innerHTML =
+                    '<tr><td colspan="8" class="error">Failed to load data. Please try again.</td></tr>';
+            }
+        }
+
+        function updateDashboard(data) {
+            const tableBody = document.getElementById('products-body');
+            tableBody.innerHTML = '';
+
+            Object.entries(data).forEach(([product, analysis]) => {
+                const row = document.createElement('tr');
+
+                // Determine CSS classes
+                const riskClass = analysis.inventory_risk.risk_level === 'HIGH_RISK' ? 'risk-high' :
+                    analysis.inventory_risk.risk_level === 'OPPORTUNITY' ? 'risk-opportunity' : 'risk-stable';
+
+                const trendClass = analysis.forecast.demand_trend_pct > 5 ? 'trend-up' :
+                    analysis.forecast.demand_trend_pct < -5 ? 'trend-down' : 'trend-stable';
+
+                // Confidence Badge Logic
+                let confBadgeClass = 'badge-medium'; // default
+                if (analysis.forecast.confidence_tier === 'HIGH') confBadgeClass = 'badge-high';
+                if (analysis.forecast.confidence_tier === 'LOW') confBadgeClass = 'badge-low';
+
+                // Alerts Logic
+                let alertsHtml = '-';
+                if (analysis.inventory_risk.expiry_risk && analysis.inventory_risk.expiry_risk !== 'NONE') {
+                    const expiryRisk = analysis.inventory_risk.expiry_risk;
+                    let badgeClass = 'badge-medium';
+                    if (expiryRisk === 'CRITICAL') badgeClass = 'badge-high'; // Recycle existing high class (red)
+                    // You might want specific classes like 'badge-critical' if defined in CSS
+
+                    alertsHtml = `<span class="badge ${badgeClass}" title="${analysis.inventory_risk.reason}">⏳ ${expiryRisk} EXPIRY</span>`;
+                }
+
+                row.innerHTML = `
+                    <td><strong>${product}</strong></td>
+                    <td><span class="badge" style="background:#ddd; color:#333;">${analysis.competition ? analysis.competition.market_position : 'N/A'}</span></td>
+                    <td class="${trendClass}">
+                        ${analysis.forecast.demand_trend_pct > 0 ? '↑' : '↓'} ${Math.abs(analysis.forecast.demand_trend_pct)}%
+                    </td>
+                    <td class="${riskClass}">
+                        ${analysis.inventory_risk.risk_level.replace('_', ' ')}
+                    </td>
+                    <td>${alertsHtml}</td>
+                    <td>
+                        ${analysis.pricing.action === 'INCREASE' ? '📈 Increase' :
+                        analysis.pricing.action === 'DECREASE' ? '📉 Decrease' : '⚖️ Hold'}
+                    </td>
+                    <td>
+                        <span class="badge ${confBadgeClass}">${analysis.forecast.confidence_tier}</span>
+                    </td>
+                    <td>
+                        <a href="/product/${encodeURIComponent(product)}" class="btn-view">Details</a>
+                        <button onclick="simulateSale('${product.replace(/'/g, "\\'")}')" class="btn-sm" title="Simulate POS Sale">💰 Sale</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateSummaryCards(insights) {
+            document.getElementById('total-products').textContent = insights.counts.total_products;
+            document.getElementById('high-risk-count').textContent = insights.counts.high_risk;
+            document.getElementById('opportunity-count').textContent = insights.counts.opportunities;
+
+            // Executive Headline
+            const hl = document.getElementById('summaryHeadline');
+            hl.textContent = insights.headline || "Getting latest insights...";
+
+            // Basic color coding for headline
+            if (insights.counts.high_risk > insights.counts.opportunities) {
+                hl.style.color = "#e74c3c";
+                hl.innerHTML = "⚠️ " + hl.innerHTML;
+            } else if (insights.counts.opportunities > insights.counts.high_risk) {
+                hl.style.color = "#27ae60";
+                hl.innerHTML = "💡 " + hl.innerHTML;
+            } else {
+                hl.style.color = "#2c3e50";
+            }
+        }
+
+        async function simulateSale(productName) {
+            // Simplified UI interaction - no confirmation alert for speed
+            try {
+                const response = await fetch('/api/v1/products/transaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_name: productName, quantity: 1, transaction_type: 'SALE' })
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    // Toast or minor notification would be better, but refresh for now
+                    refreshAnalysis();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            }
+        }
+
+        async function uploadInventory() {
+            const fileInput = document.getElementById('inventoryFile');
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Show loading state by finding the upload button (it's the first button in controls usually, or we can use specific class)
+            // Since we reused btn-refresh class but added inline style, let's identify it by text content or just safer:
+            const buttons = document.querySelectorAll('.controls button');
+            const uploadBtn = buttons[0];
+            const originalText = uploadBtn.innerHTML;
+
+            uploadBtn.innerHTML = '⏳ Uploading...';
+            uploadBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/upload_inventory', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    let msg = 'Success: ' + result.message;
+                    if (result.warnings && result.warnings.length > 0) {
+                        msg += '\n\n⚠️ Note:\n' + result.warnings.join('\n');
+                    }
+                    alert(msg);
+                    refreshAnalysis();
+                } else {
+                    alert('Error: ' + (result.error || 'Upload failed'));
+                }
+            } catch (e) {
+                alert('Error: ' + e);
+            } finally {
+                uploadBtn.innerHTML = originalText;
+                uploadBtn.disabled = false;
+                fileInput.value = ''; // Reset
+            }
+        }
+
+        function refreshAnalysis() {
+            document.getElementById('products-body').innerHTML =
+                '<tr><td colspan="8" class="loading">Refreshing analysis...</td></tr>';
+            loadDashboardData();
+        }
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+
+</html>

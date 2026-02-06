@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insights - RetailMind</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>💡 Business Insights</h1>
+            <p class="subtitle">Plain-English AI analysis for decision makers</p>
+        </header>
+
+        <nav class="breadcrumb">
+            <a href="/">Home</a> > Insights
+        </nav>
+
+        <main class="main-content">
+            <div class="insights-header">
+                <h2>Store Performance Overview</h2>
+                <p>AI-generated insights based on recent sales data and trends</p>
+            </div>
+
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>Total Products</h3>
+                    <p id="total-products" class="summary-value">-</p>
+                </div>
+                <div class="summary-card warning">
+                    <h3>High Risk</h3>
+                    <p id="high-risk-count" class="summary-value">-</p>
+                </div>
+                <div class="summary-card success">
+                    <h3>Opportunities</h3>
+                    <p id="opportunity-count" class="summary-value">-</p>
+                </div>
+            </div>
+
+            <div class="insights-list" id="insights-list">
+                <div class="loading">Loading insights...</div>
+            </div>
+
+            <div class="product-lists">
+                <div class="product-list-section" id="high-risk-section">
+                    <h3>🚨 High Risk Products</h3>
+                    <div class="product-list" id="high-risk-products">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="product-list-section" id="opportunity-section">
+                    <h3>🎯 Opportunity Products</h3>
+                    <div class="product-list" id="opportunity-products">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-steps-grid"
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                <div class="action-card daily-card"
+                    style="background: #fff; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #e74c3c; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top:0; color: #c0392b;">📅 Daily Tasks (Urgent)</h3>
+                    <ul id="daily-actions-list" style="padding-left: 20px;">
+                        <!-- Will be populated by JavaScript -->
+                    </ul>
+                </div>
+
+                <div class="action-card weekly-card"
+                    style="background: #fff; padding: 1.5rem; border-radius: 8px; border-left: 5px solid #2980b9; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                    <h3 style="margin-top:0; color: #2c3e50;">🗓️ Weekly Plan (Strategy)</h3>
+                    <ul id="weekly-strategy-list" style="padding-left: 20px;">
+                        <!-- Will be populated by JavaScript -->
+                    </ul>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <nav class="nav">
+                <a href="/">Home</a>
+                <a href="/dashboard">Dashboard</a>
+                <a href="/insights">Insights</a>
+                <a href="/about">About</a>
+            </nav>
+        </footer>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script>
+        async function loadInsights() {
+            try {
+                const response = await fetch('/api/v1/products/insights');
+                const insights = await response.json();
+                updateInsightsPage(insights);
+            } catch (error) {
+                console.error('Error loading insights:', error);
+                document.getElementById('insights-list').innerHTML =
+                    '<div class="error">Failed to load insights. Please try again.</div>';
+            }
+        }
+
+        function updateInsightsPage(insights) {
+            // Update summary cards
+            document.getElementById('total-products').textContent = insights.counts.total_products;
+            document.getElementById('high-risk-count').textContent = insights.counts.high_risk;
+            document.getElementById('opportunity-count').textContent = insights.counts.opportunities;
+
+            // Update insights list with animation delay
+            const insightsList = document.getElementById('insights-list');
+            insightsList.innerHTML = '';
+
+            insights.insights.forEach((insight, index) => {
+                const insightElement = document.createElement('div');
+                insightElement.className = 'insight-item';
+                insightElement.style.animationDelay = `${index * 0.1}s`; // Staggered animation
+                insightElement.innerHTML = `
+                    <div class="insight-content">
+                        ${insight}
+                    </div>
+                `;
+                insightsList.appendChild(insightElement);
+            });
+
+            // Update high risk products
+            const highRiskList = document.getElementById('high-risk-products');
+            if (insights.high_risk_products.length > 0) {
+                highRiskList.innerHTML = insights.high_risk_products.map(product =>
+                    `<a href="/product/${encodeURIComponent(product)}" class="product-link warning-link">
+                        <span>${product}</span>
+                        <span class="link-arrow">→</span>
+                    </a>`
+                ).join('');
+            } else {
+                highRiskList.innerHTML = '<p class="no-items">No high risk products detected</p>';
+            }
+
+            // Update opportunity products
+            const opportunityList = document.getElementById('opportunity-products');
+            if (insights.opportunity_products.length > 0) {
+                opportunityList.innerHTML = insights.opportunity_products.map(product =>
+                    `<a href="/product/${encodeURIComponent(product)}" class="product-link success-link">
+                        <span>${product}</span>
+                        <span class="link-arrow">→</span>
+                    </a>`
+                ).join('');
+            } else {
+                opportunityList.innerHTML = '<p class="no-items">No opportunity products detected</p>';
+            }
+
+            // Update Daily and Weekly Lists
+            const dailyList = document.getElementById('daily-actions-list');
+            dailyList.innerHTML = '';
+            (insights.daily_actions || ['Check dashboard']).forEach(step => {
+                const li = document.createElement('li');
+                li.textContent = step;
+                dailyList.appendChild(li);
+            });
+
+            const weeklyList = document.getElementById('weekly-strategy-list');
+            weeklyList.innerHTML = '';
+            (insights.weekly_strategy || ['Continue current strategy']).forEach(step => {
+                const li = document.createElement('li');
+                li.textContent = step;
+                weeklyList.appendChild(li);
+            });
+        }
+
+        // Load insights on page load
+        document.addEventListener('DOMContentLoaded', loadInsights);
+    </script>
+</body>
+
+</html>
